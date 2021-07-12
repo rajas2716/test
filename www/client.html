@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Fluent</title>
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+    />
+    <meta
+      name="description"
+      content="Fluent powered by WebRTC"
+    />
+    
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/images/flower.png"
+    />
+    <!-- mirotalk css -->
+    <link rel="stylesheet" href="/css/client.css" />
+    <!-- whiteboard css -->
+    <link rel="stylesheet" href="/css/whiteboard.css" />
+    <!-- https://animate.style 4 swal fadeIn-Out -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+  </head>
+
+  <body onload="initPeer()">
+    <!-- just 4SEO Optimization -->
+    <div id="webRTCSeo"><h1>WebRTC</h1></div>
+
+    <!-- show this before to join -->
+    <div id="loadingDiv">
+     <h1 style="color: #8D91C9;"> Loading </h1>
+    </div>
+
+    <!-- Start left buttons 
+    -->
+    <div id="leftButtons">
+      <button id="audioBtn" class="fas fa-microphone" style="display: none;"></button>
+      <button id="videoBtn" class="fas fa-video" style="display: none;"></button>
+      <button id="swapCameraBtn" class="fas fa-sync-alt" style="display: none;"></button>
+      <button id="chatRoomBtn" class="fas fa-comment"></button>
+    </div>
+    <!-- End left buttons -->
+
+    <!-- Start top buttons 
+    -->
+    <div id="topright">
+      <button id="fullScreenBtn" class="fas fa-expand-alt"></button>
+      <button id="shareRoomBtn" class="fas fa-users"></button>
+    </div>
+
+    <div id="topleft">
+      <button id="screenShareBtn" class="fas fa-desktop"></button>
+      <button id="recordStreamBtn" class="fas fa-record-vinyl"></button>
+    </div>
+
+    <!-- End top buttons -->
+
+
+    <!-- Start bottom buttons 
+    -->
+
+    <div id="bottomleft">
+      <button id="whiteboardBtn" class="fas fa-chalkboard-teacher" style="background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet, red);"></button>
+      <button id="fileShareBtn" class="fas fa-folder-open" style="background: #E4EB29;"></button>
+      <button id="mySettingsBtn" class="fas fa-cogs" style="background: blue;"></button>
+    </div>
+
+    <div id="bottomButtons">
+      <button  class="fas fa-microphone" onclick="handleAudio(event, true)" style="color: darkslategray;"></button>
+      <button  class="fas fa-video" onclick="handleVideo(event, true)" style="color: darkslategray;"></button>
+      <button id="myHandBtn" class="fas fa-hand-paper"></button>
+    </div>
+
+    <div id="bottomright">
+        <button id="leaveRoomBtn" class="fas fa-phone-slash" style="background: red"></button>
+    </div>
+    <!-- End bottom buttons-->
+
+    <!-- Start chat room 
+    https://codepen.io/sajadhsm/pen/odaBdd
+    https://getemoji.com
+    -->
+    <section id="msgerDraggable" class="msger-draggable">
+      <section id="msger" class="msger">
+        <header id="msgerHeader" class="msger-header">
+          <div class="msger-header-title">
+            <i class="fas fa-comment-alt"></i> Chat
+          </div>
+          <div class="msger-header-options">
+            <button id="msgerTheme" class="fas fa-ghost"></button>
+            <button id="msgerCPBtn" class="fas fa-users"></button>
+            <button id="msgerClean" class="fas fa-trash"></button>
+            <button id="msgerSaveBtn" class="fas fa-save"></button>
+            <button id="msgerClose" class="fas fa-times"></button>
+          </div>
+        </header>
+
+        <!-- public messages example -->
+        <main id="msgerChat" class="msger-chat">
+          
+        </main>
+
+        <div class="msger-inputarea">
+          <input
+            id="msgerInput"
+            class="msger-input"
+            type="text"
+            placeholder="Enter your message..."
+          />
+          <button id="msgerEmojiBtn" class="fas fa-smile"></button>
+          <button id="msgerSendBtn" class="fas fa-paper-plane"></button>
+        </div>
+      </section>
+
+      <!-- Start private msg -->
+      <section id="msgerCP">
+        <section id="msgerCPSec" class="msger">
+          <header id="msgerCPHeader" class="msger-private-header">
+            <div class="msger-header-title">
+              <i class="fas fa-comment-alt"></i> Send Private messages
+            </div>
+            <div class="msger-header-options">
+              <button id="msgerCPCloseBtn" class="fas fa-times"></button>
+            </div>
+          </header>
+          <main id="msgerCPChat" class="msger-chat">
+            <div id="msgerCPList"></div>
+          </main>
+        </section>
+      </section>
+      <!-- End private msg -->
+    </section>
+    <!-- End chat room -->
+
+    <!-- Start emoji picker 
+    https://github.com/nolanlawson/emoji-picker-element ] 
+    -->
+    <section id="msgerEmojiPicker">
+      <header id="msgerEmojiHeader">
+        <button id="msgerCloseEmojiBtn" class="fas fa-times"></button>
+      </header>
+      <emoji-picker class="dark"></emoji-picker>
+      <!-- <emoji-picker class="light"></emoji-picker> -->
+    </section>
+    <!-- End emoji picker -->
+
+    <!-- Start my settings -->
+    <section id="mySettings">
+      <header id="mySettingsHeader">
+        <button id="mySettingsCloseBtn" class="fas fa-times"></button>
+      </header>
+      <main>
+        <br />
+        <div class="tab">
+          <button id="tabDevicesBtn" class="tablinks">Devices</button>
+          <button id="tabBandwidthBtn" class="tablinks">Bandwidth</button>
+          <button id="tabRoomBtn" class="tablinks">Room</button>
+        </div>
+
+        <div id="tabDevices" class="tabcontent">
+          <br />
+          <div>
+            <label for="audioSource">Audio input:&nbsp;</label><br />
+            <select id="audioSource"></select>
+          </div>
+          <br />
+          <div>
+            <label for="audioOutput">Audio output:&nbsp;</label><br />
+            <select id="audioOutput"></select>
+          </div>
+          <br />
+          <div>
+            <label for="videoSource">Video source:&nbsp;</label><br />
+            <select id="videoSource"></select>
+          </div>
+        </div>
+
+        <div id="tabBandwidth" class="tabcontent">
+          <br />
+          <label for="videoQuality">Video quality:&nbsp;</label>
+          <br/>
+          <select id="videoQuality">
+            <option value="default">default</option>
+            <option value="qvgaVideo">low</option>
+            <option value="vgaVideo">medium</option>
+            <option value="hdVideo">high</option>
+            <option value="fhdVideo">very high</option>
+            <option value="4kVideo">ultra high</option>
+          </select>
+          <br /><br />
+          <label for="videoFps">Video fps:&nbsp;</label>
+          <br />
+          <select id="videoFps">
+            <option value="30">30 fps</option>
+            <option value="25">25 fps</option>
+            <option value="20">20 fps</option>
+            <option value="15">15 fps</option>
+            <option value="10">10 fps</option>
+            <option value="5">5 fps</option>
+          </select>
+          <br /><br />
+          <label for="screenFps">Screen fps:&nbsp;</label>
+          <br />
+          <select id="screenFps">
+            <option value="30">30 fps</option>
+            <option value="25">25 fps</option>
+            <option value="20">20 fps</option>
+            <option value="15">15 fps</option>
+            <option value="10">10 fps</option>
+            <option value="5">5 fps</option>
+          </select>
+        </div>
+
+        <div id="tabRoom" class="tabcontent">
+          <br />
+          <div>
+            <label>My name:&nbsp;</label><br />
+            <input
+              id="myPeerNameSet"
+              type="text"
+              placeholder="Change name..."
+            />&nbsp;&nbsp;
+            <button id="myPeerNameSetBtn" class="fas fa-user-edit">
+              Change
+            </button>
+          </div>
+          <br />
+          <div>
+            <label>Participants:&nbsp;</label><br />
+            <button id="muteEveryoneBtn" class="fas fa-microphone">
+              Mute everyone</button
+            >&nbsp;&nbsp;
+            <button id="hideEveryoneBtn" class="fas fa-video">
+              Hide everyone
+            </button>
+          </div>
+        </div>
+      </main>
+    </section>
+    <!-- End my settings -->
+
+    <!-- Start whiteboard -->
+    <div class="whiteboard-cont">
+      <div class="colors-cont">
+        <button id="whiteboardCloseBtn" class="fas fa-times"></button>
+        <button id="whiteboardFsBtn" class="fas fa-expand-alt"></button>
+        <div>
+          <input
+            type="color"
+            id="whiteboardColorPicker"
+            onchange="setColor(value)"
+          />
+        </div>
+        <br />
+
+        <div class="white" onclick="setColor('#ffffff')"></div>
+        <div class="red" onclick="setColor('#e74c3c')"></div>
+        <div class="yellow" onclick="setColor('#f1c40f')"></div>
+        <div class="green" onclick="setColor('#badc58')"></div>
+        <div class="blue" onclick="setColor('#3498db')"></div>
+        <div class="orange" onclick="setColor('#e67e22')"></div>
+        <div class="purple" onclick="setColor('#9b59b6')"></div>
+        <div class="pink" onclick="setColor('#fd79a8')"></div>
+        <div class="brown" onclick="setColor('#834c32')"></div>
+        <div class="grey" onclick="setColor('#afadad')"></div>
+
+        <button id="whiteboardEraserBtn" class="fas fa-eraser"></button>
+        <button id="whiteboardSaveBtn" class="fas fa-save"></button>
+        <button id="whiteboardCleanBtn" class="fas fa-trash"></button>
+      </div>
+      <canvas id="whiteboard"></canvas>
+    </div>
+    <!-- End whiteboard -->
+
+    <!-- Start File Send -->
+    <div id="sendFileDiv">
+      <div id="sendFileInfo"></div>
+      <div id="sendFilePercentage"></div>
+      <progress id="sendProgress" max="0" value="0"></progress>
+      <button id="sendAbortBtn" class="fas fa-stop-circle">&nbsp;Abort</button>
+    </div>
+    <!-- End File Send -->
+
+    <!-- Js scripts -->
+    <script
+      src="https://kit.fontawesome.com/d2f1016e6f.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script src="https://cdn.rawgit.com/muaz-khan/DetectRTC/master/DetectRTC.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.16"></script>
+    <script
+      type="module"
+      src="https://unpkg.com/emoji-picker-element@1"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/client.js"></script>
+    <!-- end of Js scripts -->
+
+    <!-- 
+    the <video> and <audio> tags are all added and removed dynamically
+    in 'onAddStream', 'setupLocalMedia', and 'removePeer'/'disconnect'
+    --></body>
+</html>

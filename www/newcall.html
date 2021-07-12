@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Fluent Join Room</title>
+    <link rel="stylesheet" href="css/landing.css" />
+    <link rel="stylesheet" href="css/newcall.css" />
+    <link rel="shortcut icon" href="images/flower.png" />
+  
+  </head>
+  <body class="">
+    <div class="body-wrap">
+      <header class="site-header reveal-from-top">
+        <div class="container">
+          <div class="site-header-inner">
+            <div class="brand">
+              <h1 class="m-0">
+                <a href="/"
+                  ><img src="images/flower.png" alt="flower" width="32" height="32"
+                /></a>
+              </h1>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main class="site-content">
+        <section class="hero section illustration-section-01">
+          <div class="container">
+            <div class="hero-inner section-inner">
+              <div class="split-wrap invert-mobile">
+                <div class="split-item">
+                  <div
+                    class="hero-content split-item-content center-content-mobile"
+                  >
+                    <h1
+                      class="mt-0 mb-16 reveal-from-bottom"
+                      data-reveal-delay="150" style="color:#E55454"
+                    >
+                      Pick a Name
+                    </h1>
+                    <div class="mb-24">
+                  <label class="form-label screen-reader" for="roomName"
+                    >Fluent</label
+                  >
+                  <div class="form-group-desktop">
+                    <input
+                      class="form-input"
+                      type="text"
+                      id="roomName"
+                      value="Fluent"
+                    />
+                    <button style="color:black"
+                      class="button button-secondary fourth"
+                      onclick="{window.location.href = '/join/' + document.getElementById('roomName').value}"
+                    >
+                      Join room
+                    </button>
+                  </div>
+                </div>
+                  </div>
+                  <style>
+                    @media (min-width: 641px) {
+                      .hero .split-wrap .split-item {
+                        min-height: 492px;
+                      }
+                    }
+                  </style>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer center-content-mobile">
+        <div class="container">
+          <div class="site-footer-inner">
+            <div class="footer-top space-between text-xxs">
+              <div class="brand">
+                <a href="/"
+                  ><img src="images/flower.png" alt="flower" width="32" height="32"
+                /></a>
+              </div>
+              <div class="footer-social">
+                <div>
+                  <a
+                    target="_blank"
+                    href="https://github.com/rajas2716/Video---Chat-Application"
+                  >
+                    <img src="images/github.png" style="filter: invert(1);">
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div
+              class="footer-bottom space-between text-xxs invert-order-desktop"
+            >
+              <nav class="footer-nav">
+                <ul class="list-reset">
+                  <li>
+                    <a
+                      target="_blank"
+                      href="https://www.linkedin.com/in/rajas-p-05b2a3144/"
+                      >Rajas Paunikar</a
+                    >
+                  </li>
+                </ul>
+              </nav>
+              <div class="footer-copyright">
+                &copy; Fluent
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+    <script src="js/newroom.js"></script>
+  </body>
+</html>
