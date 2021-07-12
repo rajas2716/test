@@ -1,7 +1,12 @@
 "use strict"; // Strict mode enabled
 
 
-const peerLookupUrl = "https://extreme-ip-lookup.com/json/";
+const shareUrlImg = "../images/illustration-section-01.svg";
+const leaveRoomImg = "../images/illustration-section-01.svg";
+const confirmImg = "../images/illustration-section-01.svg";
+const fileSharingImg = "../images/illustration-section-01.svg";
+const camOffImg = "../images/cam-off.png";
+const peerLoockupUrl = "https://extreme-ip-lookup.com/json/";
 const avatarApiUrl = "https://eu.ui-avatars.com/api";
 const fileSharingInput = "*"; // allow all file extensions
 
@@ -20,7 +25,8 @@ let callStartTime;
 let callElapsedTime;
 let recStartTime;
 let recElapsedTime;
-let swalBackground = "rgba(0, 0, 0, 0.7)";
+let mirotalkTheme = "neon"; // neon - dark - forest - ghost ...
+let swalBackground = "rgba(0, 0, 0, 0.7)"; // black - #16171b - transparent ...
 let signalingServerPort = 3000; // must be same of server PORT
 let signalingServer = getServerUrl();
 let roomId = getRoomId();
@@ -128,6 +134,7 @@ let videoSelect;
 let videoQualitySelect;
 let videoFpsSelect;
 let screenFpsSelect;
+let themeSelect;
 let selectors;
 // my video element
 let myVideo;
@@ -242,6 +249,7 @@ function getHtmlElementsById() {
   videoQualitySelect = getId("videoQuality");
   videoFpsSelect = getId("videoFps");
   screenFpsSelect = getId("screenFps");
+  themeSelect = getId("mirotalkTheme");
   // my conference name, hand, video - audio status
   myVideoParagraph = getId("myVideoParagraph");
   myHandStatusIcon = getId("myHandStatusIcon");
@@ -428,7 +436,7 @@ function getPeerInfo() {
  * @return json
  */
 function getPeerGeoLocation() {
-  fetch(peerLookupUrl)
+  fetch(peerLoockupUrl)
     .then((res) => res.json())
     .then((outJson) => {
       peerGeo = outJson;
@@ -545,7 +553,7 @@ function whoAreYou() {
     allowOutsideClick: false,
     background: swalBackground,
     position: "center",
-    imageAlt: "fluent-name",
+    imageAlt: "mirotalk-name",
     title: "Enter your name",
     input: "text",
     html: `<br>
@@ -611,7 +619,7 @@ function welcomeUser() {
     background: swalBackground,
     position: "center",
     title: "<strong>Welcome " + myPeerName + "</strong>",
-    imageAlt: "fluent-welcome",
+    imageAlt: "mirotalk-welcome",
     html:
       `
       <br/> 
@@ -631,7 +639,7 @@ function welcomeUser() {
     } else if (result.isDenied) {
       let message = {
         email: "",
-        subject: "Please join our Fluent Video Chat Meeting",
+        subject: "Please join our Mirotalk Video Chat Meeting",
         body: "Click to join: " + myRoomUrl,
       };
       shareRoomByEmail(message);
@@ -737,7 +745,7 @@ function handleRTCDataChannel(peer_id) {
     console.log("Datachannel event " + peer_id, event);
     event.channel.onmessage = (msg) => {
       switch (event.channel.label) {
-        case "fluent_chat_channel":
+        case "mirotalk_chat_channel":
           let dataMessage = {};
           try {
             dataMessage = JSON.parse(msg.data);
@@ -746,7 +754,7 @@ function handleRTCDataChannel(peer_id) {
             console.log(err);
           }
           break;
-        case "fluent_file_sharing_channel":
+        case "mirotalk_file_sharing_channel":
           handleDataChannelFileSharing(msg.data);
           break;
       }
@@ -916,6 +924,12 @@ function handleRemovePeer(config) {
   delete peerMediaElements[peer_id];
 
 }
+
+/**
+ * Set mirotalk theme neon - dark - forest - sky - ghost
+ * @param {*} theme
+ */
+
 
 /**
  * Setup local media stuff
@@ -1542,7 +1556,9 @@ function setChatRoomBtn() {
     }
   });
 
+  // ghost theme + undo
   msgerTheme.addEventListener("click", (e) => {
+    if (mirotalkTheme == "ghost") return;
 
     if (e.target.className == "fas fa-ghost") {
       e.target.className = "fas fa-undo";
@@ -1553,7 +1569,9 @@ function setChatRoomBtn() {
       document.documentElement.style.setProperty("--msger-private-bg", "black");
     } else {
       e.target.className = "fas fa-ghost";
-      document.documentElement.style.setProperty("--msger-bg", "white");
+      mirotalkTheme == "dark"
+        ? document.documentElement.style.setProperty("--msger-bg", "#16171b")
+        : document.documentElement.style.setProperty("--msger-bg", "black");
     }
   });
 
@@ -1773,6 +1791,7 @@ function setLeaveRoomBtn() {
 function handleBodyOnMouseMove() {
   document.body.addEventListener("mousemove", (e) => {
     showLeftButtonsAndMenu();
+    showbuttons();
   });
 }
 
@@ -1781,9 +1800,6 @@ function handleBodyOnMouseMove() {
  */
 function setupMySettings() {
   // tab buttons
-  tabDevicesBtn.addEventListener("click", (e) => {
-    openTab(e, "tabDevices");
-  });
   tabBandwidthBtn.addEventListener("click", (e) => {
     openTab(e, "tabBandwidth");
   });
@@ -1832,6 +1848,11 @@ function setupMySettings() {
     screenFpsSelect.value = null;
     screenFpsSelect.disabled = true;
   }
+  // select themes
+  themeSelect.addEventListener("change", (e) => {
+    setTheme(themeSelect.value);
+    setRecordButtonUi();
+  });
   // room actions
   muteEveryoneBtn.addEventListener("click", (e) => {
     disableAllPeers("audio");
@@ -2175,7 +2196,8 @@ async function shareRoomUrl() {
       background: swalBackground,
       position: "center",
       title: "Share the Room",
-      imageAlt: "fluent-share",
+      imageAlt: "mirotalk-share",
+      imageUrl: shareUrlImg,
       html:
         `
       <br/>
@@ -2199,7 +2221,7 @@ async function shareRoomUrl() {
       } else if (result.isDenied) {
         let message = {
           email: "",
-          subject: "Please join our Fluent Video Chat Meeting",
+          subject: "Please join our Mirotalk Video Chat Meeting",
           body: "Click to join: " + myRoomUrl,
         };
         shareRoomByEmail(message);
@@ -2608,7 +2630,18 @@ function startStreamRecording() {
 function stopStreamRecording() {
   mediaRecorder.stop();
   isStreamRecording = false;
-  recordStreamBtn.style.setProperty("background-color", "white");
+  setRecordButtonUi();
+}
+
+/**
+ * Set Record Button UI on change theme
+ */
+function setRecordButtonUi() {
+  if (mirotalkTheme == "ghost") {
+    recordStreamBtn.style.setProperty("background-color", "transparent");
+  } else {
+    recordStreamBtn.style.setProperty("background-color", "white");
+  }
 }
 
 /**
@@ -2682,7 +2715,7 @@ function disableElements(b) {
  */
 function createChatDataChannel(peer_id) {
   chatDataChannels[peer_id] = peerConnections[peer_id].createDataChannel(
-    "fluent_chat_channel"
+    "mirotalk_chat_channel"
   );
   chatDataChannels[peer_id].addEventListener("open", onChatChannelStateChange);
   chatDataChannels[peer_id].addEventListener("close", onChatChannelStateChange);
@@ -3065,9 +3098,6 @@ function hideShowMySettings() {
   isMySettingsVisible = false;
 }
 
-let tabDevicesBtn;
-tabDevicesBtn = getId("tabDevicesBtn");
-
 /**
  * Handle html tab settings
  * https://www.w3schools.com/howto/howto_js_tabs.asp
@@ -3352,6 +3382,7 @@ function disableAllPeers(element) {
   Swal.fire({
     background: swalBackground,
     position: "center",
+    imageUrl: element == "audio" ? audioOffImg : camOffImg,
     title:
       element == "audio"
         ? "Mute everyone except yourself?"
@@ -3368,11 +3399,11 @@ function disableAllPeers(element) {
     if (result.isConfirmed) {
       switch (element) {
         case "audio":
-          userLog("toast", "Mute everyone");
+          userLog("toast", "Mute everyone 👍");
           emitPeerAction("muteEveryone");
           break;
         case "video":
-          userLog("toast", "Hide everyone");
+          userLog("toast", "Hide everyone 👍");
           emitPeerAction("hideEveryone");
           break;
       }
@@ -3651,7 +3682,7 @@ function remoteWbAction(action) {
  */
 function createFileSharingDataChannel(peer_id) {
   fileDataChannels[peer_id] = peerConnections[peer_id].createDataChannel(
-    "fluent_file_sharing_channel"
+    "mirotalk_file_sharing_channel"
   );
   fileDataChannels[peer_id].binaryType = "arraybuffer";
   fileDataChannels[peer_id].addEventListener("open", onFSChannelStateChange);
@@ -3814,7 +3845,8 @@ function selectFileToShare() {
   Swal.fire({
     allowOutsideClick: false,
     background: swalBackground,
-    imageAlt: "fluent-file-sharing",
+    imageAlt: "mirotalk-file-sharing",
+    imageUrl: fileSharingImg,
     position: "center",
     title: "Share the file",
     input: "file",
@@ -3910,7 +3942,7 @@ function endDownload() {
           " size " +
           bytesToSize(incomingFileInfo.fileSize),
         imageUrl: e.target.result,
-        imageAlt: "fluent-file-img-download",
+        imageAlt: "mirotalk-file-img-download",
         showDenyButton: true,
         confirmButtonText: `Save`,
         denyButtonText: `Cancel`,
@@ -3928,7 +3960,8 @@ function endDownload() {
     Swal.fire({
       allowOutsideClick: false,
       background: swalBackground,
-      imageAlt: "fluent-file-download",
+      imageAlt: "mirotalk-file-download",
+      imageUrl: fileSharingImg,
       position: "center",
       title: "Received file",
       text:
@@ -3984,6 +4017,7 @@ function kickOut(peer_id, peerKickOutBtn) {
   Swal.fire({
     background: swalBackground,
     position: "center",
+    imageUrl: confirmImg,
     title: "Kick out " + pName,
     text: "Are you sure you want to kick out this participant?",
     showDenyButton: true,
@@ -4049,6 +4083,26 @@ function kickedOut(config) {
  * About info
  * https://sweetalert2.github.io
  */
+function getAbout() {
+
+  Swal.fire({
+    background: swalBackground,
+    position: "center",
+    title: "<strong>WebRTC Made with ❤️</strong>",
+    imageAlt: "mirotalk-about",
+    html: `
+    <br/>
+    <div id="about">
+      <b>Open Source</b> project on
+      <a href="https://github.com/miroslavpejic85/mirotalk" target="_blank"><br/></br>
+      <img alt="mirotalk github" src="../images/github.png"></a><br/><br/>
+      <button id="sponsorBtn" class="far fa-heart pulsate" onclick="window.open('https://github.com/sponsors/miroslavpejic85?o=esb')"> Sponsor</button>
+    </div></br>
+    <div id="author">Author:<a href="https://www.linkedin.com/in/miroslav-pejic-976a07101/" target="_blank"> Miroslav Pejic</a></div>
+    `,
+    
+  });
+}
 
 /**
  * Leave the Room and create a new one
@@ -4059,7 +4113,8 @@ function leaveRoom() {
   Swal.fire({
     background: swalBackground,
     position: "center",
-    imageAlt: "fluent-leave",
+    imageAlt: "mirotalk-leave",
+    imageUrl: leaveRoomImg,
     title: "Leave this room?",
     showDenyButton: true,
     confirmButtonText: `Yes`,
