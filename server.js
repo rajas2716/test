@@ -12,7 +12,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server().listen(server);
 
-let PORT = 3000; // signalingServerPort
+let PORT = process.env.PORT || 3000; // signalingServerPort
 let localHost = "http://localhost:" + PORT; // http
 let channels = {}; // collect channels
 let sockets = {}; // collect sockets
