@@ -12,7 +12,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server().listen(server);
 
-let PORT = process.env.PORT || 3000; // signalingServerPort
+let PORT = 3000; // signalingServerPort
 let localHost = "http://localhost:" + PORT; // http
 let channels = {}; // collect channels
 let sockets = {}; // collect sockets
@@ -109,19 +109,6 @@ let iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
  * Start Local Server with ngrok https tunnel (optional)
  */
 server.listen(PORT, null, () => {
-  logme(
-    `%c
-
-  ███████╗██╗ ██████╗ ███╗   ██╗      ███████╗███████╗██████╗ ██╗   ██╗███████╗██████╗ 
-  ██╔════╝██║██╔════╝ ████╗  ██║      ██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗
-  ███████╗██║██║  ███╗██╔██╗ ██║█████╗███████╗█████╗  ██████╔╝██║   ██║█████╗  ██████╔╝
-  ╚════██║██║██║   ██║██║╚██╗██║╚════╝╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██╔══╝  ██╔══██╗
-  ███████║██║╚██████╔╝██║ ╚████║      ███████║███████╗██║  ██║ ╚████╔╝ ███████╗██║  ██║
-  ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝      ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝ started...
-
-  `,
-    "font-family:monospace"
-  );
   logme("settings", {
       http: localHost,
       iceServers: iceServers,
