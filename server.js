@@ -1,4 +1,42 @@
-"use strict"; // Strict mode enabled
+/*
+http://patorjk.com/software/taag/#p=display&f=ANSI%20Regular&t=Server
+
+███████ ███████ ██████  ██    ██ ███████ ██████  
+██      ██      ██   ██ ██    ██ ██      ██   ██ 
+███████ █████   ██████  ██    ██ █████   ██████  
+     ██ ██      ██   ██  ██  ██  ██      ██   ██ 
+███████ ███████ ██   ██   ████   ███████ ██   ██                                           
+
+dependencies: {
+  compression : https://www.npmjs.com/package/compression
+  dotenv      : https://www.npmjs.com/package/dotenv
+  express     : https://www.npmjs.com/package/express
+  ngrok       : https://www.npmjs.com/package/ngrok
+  socket.io   : https://www.npmjs.com/package/socket.io
+  swagger     : https://www.npmjs.com/package/swagger-ui-express
+  yamljs      : https://www.npmjs.com/package/yamljs
+}
+
+Mirotalk Signaling Server
+Copyright (C) 2021 Miroslav Pejic <miroslav.pejic.85@gmail.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+"use strict"; // https://www.w3schools.com/js/js_strict.asp
+
 require("dotenv").config();
 
 const compression = require("compression");
@@ -10,17 +48,29 @@ const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server().listen(server);
+const ngrok = require("ngrok");
+const yamlJS = require("yamljs");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = yamlJS.load(__dirname + "/api/swagger.yaml");
+const apiBasePath = "/api/v1";
 
-let PORT = 3000; // signalingServerPort
+let API_KEY_SECRET = process.env.API_KEY_SECRET || "mirotalk_default_secret";
+let PORT = process.env.PORT || 3000; // signalingServerPort
 let localHost = "http://localhost:" + PORT; // http
+let api_docs = localHost + apiBasePath + "/docs"; // api docs
 let channels = {}; // collect channels
 let sockets = {}; // collect sockets
 let peers = {}; // collect peers info grp by channels
 
-
+let ngrokEnabled = process.env.NGROK_ENABLED;
+let ngrokAuthToken = process.env.NGROK_AUTH_TOKEN;
+let turnEnabled = process.env.TURN_ENABLED;
+let turnUrls = process.env.TURN_URLS;
+let turnUsername = process.env.TURN_USERNAME;
+let turnCredential = process.env.TURN_PASSWORD;
 
 // Use all static files from the www folder
-app.use(express.static(path.join(__dirname, "www"))); //All static files inside www folder are public now
+app.use(express.static(path.join(__dirname, "www")));
 
 // Api parse body data as json
 app.use(express.json());
@@ -83,9 +133,74 @@ app.get("/join/*", (req, res) => {
   }
 });
 
+/**
+  MIROTALK API v1
+  The response will give you a entrypoint / Room URL for your meeting.
+  For api docs we use: https://swagger.io/
+*/
 
+// api docs
+app.use(
+  apiBasePath + "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+);
 
-/*
+// request meeting room endpoint
+app.post([apiBasePath + "/meeting"], (req, res) => {
+  // check if user was authorized for the api call
+  let authorization = req.headers.authorization;
+  if (authorization != API_KEY_SECRET) {
+    logme("Mirotalk get meeting - Unauthorized", {
+      header: req.headers,
+      body: req.body,
+    });
+    return res.status(403).json({ error: "Unauthorized!" });
+  }
+  // setup mirotalk meeting URL
+  let host = req.headers.host;
+  let meetingURL = getMeetingURL(host) + "/join/" + makeId(15);
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ meeting: meetingURL }));
+
+  // logme the output if all done
+  logme("Mirotalk get meeting - Authorized", {
+    header: req.headers,
+    body: req.body,
+    meeting: meetingURL,
+  });
+});
+
+/**
+ * Get get Meeting Room URL
+ * @param {*} host string
+ * @returns meeting Room URL
+ */
+function getMeetingURL(host) {
+  return "http" + (host.includes("localhost") ? "" : "s") + "://" + host;
+}
+
+/**
+ * Generate random Id
+ * @param {*} length int
+ * @returns random id
+ */
+function makeId(length) {
+  let result = "";
+  let characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+// end of MIROTALK API v1
+
+/**
+ * You should probably use a different stun-turn server
+ * doing commercial stuff, also see:
+ *
  * https://gist.github.com/zziuni/3741933
  * https://www.twilio.com/docs/stun-turn
  * https://github.com/coturn/coturn
@@ -95,14 +210,74 @@ app.get("/join/*", (req, res) => {
  */
 let iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
 
+if (turnEnabled == "true") {
+  iceServers.push({
+    urls: turnUrls,
+    username: turnUsername,
+    credential: turnCredential,
+  });
+}
+
 /**
- * Start Local Server 
+ * Expose server to external with https tunnel using ngrok
+ * https://ngrok.com
+ */
+async function ngrokStart() {
+  try {
+    await ngrok.authtoken(ngrokAuthToken);
+    await ngrok.connect(PORT);
+    let api = ngrok.getApi();
+    let data = await api.listTunnels();
+    let pu0 = data.tunnels[0].public_url;
+    let pu1 = data.tunnels[1].public_url;
+    let tunnelHttps = pu0.startsWith("https") ? pu0 : pu1;
+    // server settings
+    logme("settings", {
+      http: localHost,
+      https: tunnelHttps,
+      api_docs: api_docs,
+      api_key_secret: API_KEY_SECRET,
+      iceServers: iceServers,
+      ngrok: {
+        ngrok_enabled: ngrokEnabled,
+        ngrok_token: ngrokAuthToken,
+      },
+    });
+  } catch (err) {
+    console.error("[Error] ngrokStart", err);
+  }
+}
+
+/**
+ * Start Local Server with ngrok https tunnel (optional)
  */
 server.listen(PORT, null, () => {
-  logme("settings", {
+  logme(
+    `%c
+
+  ███████╗██╗ ██████╗ ███╗   ██╗      ███████╗███████╗██████╗ ██╗   ██╗███████╗██████╗ 
+  ██╔════╝██║██╔════╝ ████╗  ██║      ██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗
+  ███████╗██║██║  ███╗██╔██╗ ██║█████╗███████╗█████╗  ██████╔╝██║   ██║█████╗  ██████╔╝
+  ╚════██║██║██║   ██║██║╚██╗██║╚════╝╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██╔══╝  ██╔══██╗
+  ███████║██║╚██████╔╝██║ ╚████║      ███████║███████╗██║  ██║ ╚████╔╝ ███████╗██║  ██║
+  ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝      ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝ started...
+
+  `,
+    "font-family:monospace"
+  );
+
+  // https tunnel
+  if (ngrokEnabled == "true") {
+    ngrokStart();
+  } else {
+    // server settings
+    logme("settings", {
       http: localHost,
+      api_docs: api_docs,
+      api_key_secret: API_KEY_SECRET,
       iceServers: iceServers,
     });
+  }
 });
 
 /**
